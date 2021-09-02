@@ -1,19 +1,23 @@
-use std::io;
-use std::fs::File;
 use std::io::prelude::*;
+use headless_chrome::Browser;
 
+#[allow(unused_must_use)]
+fn main() {
+    get_cookies_from_site();
+}
 
-fn main() -> std::io::Result<()> {
-    println!("Type URL");
+fn get_cookies_from_site() -> Result<(), failure::Error> {
+    let browser = Browser::default()?;
+    let tab = browser.wait_for_initial_tab()?;
 
-    let mut url = String::new();
+    tab.navigate_to("https://google.de")?;
+    tab.wait_until_navigated()?;
+    let cookies = tab.get_cookies()?;
 
-    io::stdin()
-        .read_line(&mut url)
-        .expect("cannot read url");
+    let mut buffer = std::fs::File::create("cookies.txt")?;
 
-    let mut buffer = File::create("foobar.txt")?;
-    buffer.write_all(&url.as_bytes())?;
-
+    for i in &cookies {
+        writeln!(buffer, "{} {}", i.name, i.value)?;
+    }
     Ok(())
 }
